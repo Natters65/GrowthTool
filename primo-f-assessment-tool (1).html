@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRIMO-F Assessment Tool</title>
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root, [data-theme="light"] {
+      --text-xs: clamp(0.75rem, 0.7rem + 0.25vw, 0.875rem);
+      --text-sm: clamp(0.875rem, 0.8rem + 0.35vw, 1rem);
+      --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+      --text-lg: clamp(1.125rem, 1rem + 0.75vw, 1.5rem);
+      --text-xl: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+      --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem; --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem; --space-10: 2.5rem; --space-12: 3rem; --space-16: 4rem;
+      --color-bg:#f7f6f2; --color-surface:#f9f8f5; --color-surface-2:#fbfbf9; --color-surface-offset:#f3f0ec; --color-border:#d4d1ca; --color-divider:#dcd9d5;
+      --color-text:#28251d; --color-text-muted:#64625e; --color-text-faint:#9e9c97; --color-text-inverse:#f9f8f4;
+      --color-primary:#01696f; --color-primary-hover:#0c4e54; --color-primary-highlight:#cedcd8; --color-success:#437a22; --color-warning:#964219; --color-error:#a12c7b; --color-blue:#006494; --color-purple:#7a39bb;
+      --radius-sm:0.375rem; --radius-md:0.5rem; --radius-lg:0.75rem; --radius-xl:1rem; --radius-full:9999px;
+      --shadow-sm:0 1px 2px oklch(0.2 0.01 80 / 0.06); --shadow-md:0 4px 12px oklch(0.2 0.01 80 / 0.08); --shadow-lg:0 12px 32px oklch(0.2 0.01 80 / 0.12);
+      --transition:180ms cubic-bezier(0.16,1,0.3,1);
+      --font-body:'Satoshi','Inter',sans-serif;
+      --chart-grid: rgba(1,105,111,.14);
+    }
+    [data-theme="dark"] {
+      --color-bg:#171614; --color-surface:#1c1b19; --color-surface-2:#201f1d; --color-surface-offset:#1d1c1a; --color-border:#393836; --color-divider:#262523;
+      --color-text:#cdccca; --color-text-muted:#a6a5a2; --color-text-faint:#777674; --color-text-inverse:#171614;
+      --color-primary:#4f98a3; --color-primary-hover:#227f8b; --color-primary-highlight:#313b3b; --color-success:#6daa45; --color-warning:#bb653b; --color-error:#d163a7; --color-blue:#5591c7; --color-purple:#a86fdf;
+      --shadow-sm:0 1px 2px oklch(0 0 0 / 0.2); --shadow-md:0 4px 12px oklch(0 0 0 / 0.3); --shadow-lg:0 12px 32px oklch(0 0 0 / 0.4);
+      --chart-grid: rgba(79,152,163,.18);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; min-height:100%; }
+    body {
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      line-height: 1.55;
+      color: var(--color-text);
+      background: radial-gradient(circle at top right, color-mix(in oklab, var(--color-primary) 10%, transparent), transparent 28%), var(--color-bg);
+    }
+    button, input, textarea, select { font: inherit; }
+    .app {
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      min-height:100vh;
+    }
+    .sidebar {
+      background: color-mix(in oklab, var(--color-surface) 88%, var(--color-primary) 12%);
+      border-right:1px solid var(--color-border);
+      padding: var(--space-6);
+      display:flex;
+      flex-direction:column;
+      gap: var(--space-6);
+    }
+    .brand { display:flex; align-items:center; gap:var(--space-3); }
+    .logo {
+      width:42px; height:42px; border-radius: 14px; background: var(--color-primary); color: var(--color-text-inverse);
+      display:grid; place-items:center; box-shadow: var(--shadow-md);
+    }
+    .logo svg { width:24px; height:24px; }
+    h1 { margin:0; font-size:var(--text-lg); line-height:1.1; }
+    .subtle { color:var(--color-text-muted); font-size:var(--text-sm); }
+    .section-card, .panel {
+      background: var(--color-surface);
+      border:1px solid color-mix(in oklab, var(--color-text) 12%, transparent);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+    }
+    .section-card { padding: var(--space-4); }
+    .main {
+      padding: var(--space-6);
+      overflow-y:auto;
+      display:grid;
+      gap: var(--space-6);
+    }
+    .hero {
+      display:flex; justify-content:space-between; gap:var(--space-6); align-items:flex-start;
+      padding: var(--space-6);
+      background: linear-gradient(135deg, color-mix(in oklab, var(--color-primary) 10%, var(--color-surface)), var(--color-surface-2));
+    }
+    .hero p { max-width: 72ch; margin: var(--space-3) 0 0; color:var(--color-text-muted); }
+    .toolbar { display:flex; gap:var(--space-3); flex-wrap:wrap; }
+    .btn {
+      min-height:44px; padding:0.7rem 1rem; border-radius: var(--radius-full); border:1px solid transparent; cursor:pointer;
+      transition: all var(--transition);
+    }
+    .btn-primary { background:var(--color-primary); color:var(--color-text-inverse); }
+    .btn-primary:hover { background:var(--color-primary-hover); }
+    .btn-secondary { background:var(--color-surface-2); color:var(--color-text); border-color:var(--color-border); }
+    .btn-secondary:hover { background:var(--color-surface-offset); }
+    .layout {
+      display:grid; grid-template-columns: 1.35fr .95fr; gap:var(--space-6);
+    }
+    .panel { padding: var(--space-5); }
+    .panel h2 { margin:0 0 var(--space-4); font-size:var(--text-lg); }
+    .grid-2 { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:var(--space-4); }
+    .metric-grid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:var(--space-4); }
+    .metric {
+      padding: var(--space-4);
+      background: var(--color-surface-2);
+      border-radius: var(--radius-lg);
+      border:1px solid color-mix(in oklab, var(--color-text) 10%, transparent);
+    }
+    .metric strong { display:block; font-size:var(--text-xl); font-variant-numeric: tabular-nums lining-nums; }
+    .pill {
+      display:inline-flex; align-items:center; gap:.4rem; padding:.35rem .7rem; border-radius:var(--radius-full);
+      font-size:var(--text-xs); background:var(--color-primary-highlight); color:var(--color-primary);
+    }
+    .category-block { padding: var(--space-4); background: var(--color-surface-2); border-radius: var(--radius-lg); border:1px solid color-mix(in oklab, var(--color-text) 10%, transparent); }
+    .category-head { display:flex; justify-content:space-between; gap:var(--space-4); align-items:flex-start; margin-bottom:var(--space-3); }
+    .category-head h3 { margin:0; font-size:var(--text-base); }
+    .small { font-size:var(--text-xs); color:var(--color-text-muted); }
+    .score-row { display:grid; grid-template-columns: 1fr auto; gap:var(--space-3); align-items:center; }
+    .score-output { font-variant-numeric: tabular-nums lining-nums; font-size:var(--text-sm); color:var(--color-text-muted); }
+    input[type="range"] { width:100%; accent-color:var(--color-primary); }
+    textarea {
+      width:100%; min-height:108px; border-radius:var(--radius-lg); border:1px solid var(--color-border);
+      background:var(--color-bg); color:var(--color-text); padding:var(--space-3); resize:vertical;
+    }
+    .mapping { display:grid; gap:var(--space-3); }
+    .mapping-item {
+      padding: var(--space-3); border-radius:var(--radius-lg); background:var(--color-surface-2);
+      border:1px dashed color-mix(in oklab, var(--color-primary) 35%, var(--color-border));
+    }
+    .mapping-item strong { display:block; margin-bottom:.2rem; }
+    .recommendations { display:grid; gap:var(--space-3); }
+    .recommendation {
+      padding:var(--space-4); border-radius:var(--radius-lg); background:var(--color-surface-2);
+      border:1px solid color-mix(in oklab, var(--color-text) 10%, transparent);
+    }
+    .recommendation h4 { margin:0 0 .35rem; font-size:var(--text-sm); }
+    .recommendation p { margin:0; color:var(--color-text-muted); font-size:var(--text-sm); }
+    .footer-note { color:var(--color-text-muted); font-size:var(--text-xs); }
+    .theme-toggle {
+      min-width:44px; min-height:44px; border-radius:var(--radius-full); border:1px solid var(--color-border); background:var(--color-surface);
+      display:grid; place-items:center;
+    }
+    .section-title { display:flex; justify-content:space-between; gap:var(--space-4); align-items:center; margin-bottom:var(--space-4); }
+    .chart-wrap { min-height: 320px; }
+    .note-list { display:grid; gap:var(--space-2); padding-left:1.15rem; }
+    .note-list li { color:var(--color-text-muted); }
+    @media (max-width: 1080px) {
+      .app, .layout { grid-template-columns: 1fr; }
+      .sidebar { border-right:none; border-bottom:1px solid var(--color-border); }
+      .metric-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 640px) {
+      .main, .sidebar, .hero { padding: var(--space-4); }
+      .grid-2, .metric-grid { grid-template-columns: 1fr; }
+      .hero { flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="logo" aria-label="PRIMO-F logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 18V6h8a4 4 0 0 1 0 8H5"/>
+            <path d="M13 14l6 4"/>
+          </svg>
+        </div>
+        <div>
+          <h1>PRIMO-F assessor</h1>
+          <div class="subtle">Interactive fit review for UK grant-funded projects</div>
+        </div>
+      </div>
+
+      <div class="section-card">
+        <div class="section-title">
+          <strong>Project profile</strong>
+          <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme">◐</button>
+        </div>
+        <label class="small" for="projectName">Project or consortium name</label>
+        <textarea id="projectName" style="min-height:72px">Battery recycling scale-up programme</textarea>
+        <div style="height: var(--space-4);"></div>
+        <label class="small" for="contextBox">Assessment notes</label>
+        <textarea id="contextBox">Pre-populated around a typical Innovate UK application pack: proposal narrative, project finance workbook, exploitation plan, market evidence, and delivery milestones.</textarea>
+      </div>
+
+      <div class="section-card">
+        <strong>Typical grant file sections</strong>
+        <div class="mapping" style="margin-top: var(--space-3);">
+          <div class="mapping-item"><strong>Finance</strong><span class="small">Budget sheets, eligible costs, match funding, cash flow cover.</span></div>
+          <div class="mapping-item"><strong>Innovation</strong><span class="small">Proposal case for novelty, technical advance, IP position, work package evidence.</span></div>
+          <div class="mapping-item"><strong>Marketing</strong><span class="small">Market analysis, customer need, route to market, adoption assumptions.</span></div>
+          <div class="mapping-item"><strong>Operations</strong><span class="small">Delivery plan, milestones, dependencies, risk log, consortium roles.</span></div>
+        </div>
+      </div>
+
+      <div class="section-card footer-note">
+        Use the sliders to score PRIMO-F and RECoIL dimensions from 1 to 10. The app recalculates growth effectiveness, risk signals, radar charts, and tailored next actions instantly.
+      </div>
+    </aside>
+
+    <main class="main">
+      <section class="hero panel">
+        <div>
+          <span class="pill">Grant review workspace</span>
+          <h2 style="margin-top: var(--space-3);">Assess grant readiness, delivery strength, and scale-up effectiveness in one place.</h2>
+          <p>PRIMO-F scores the four file-driven evidence areas, while RECoIL stress-tests whether the team has the depth, governance, and leadership to turn an award into measurable growth.</p>
+        </div>
+        <div class="toolbar">
+          <button class="btn btn-primary" id="resetBtn" type="button">Reset to typical profile</button>
+          <button class="btn btn-secondary" id="exportBtn" type="button">Export snapshot</button>
+        </div>
+      </section>
+
+      <section class="metric-grid">
+        <div class="metric"><span class="small">Growth effectiveness</span><strong id="growthEffectiveness">0%</strong><span class="small">Weighted PRIMO-F x RECoIL score</span></div>
+        <div class="metric"><span class="small">Grant delivery confidence</span><strong id="deliveryConfidence">0/10</strong><span class="small">Operations, controls, resources, leadership</span></div>
+        <div class="metric"><span class="small">Commercialisation strength</span><strong id="commercialStrength">0/10</strong><span class="small">Marketing, innovation depth, experience</span></div>
+        <div class="metric"><span class="small">Priority action level</span><strong id="priorityLevel">—</strong><span class="small">Automated diagnostic status</span></div>
+      </section>
+
+      <div class="layout">
+        <section class="panel">
+          <div class="section-title"><h2>Scoring inputs</h2><span class="small">1 = weak evidence, 10 = investment-grade evidence</span></div>
+          <div class="grid-2" id="scoreGrid"></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title"><h2>Evidence mapping</h2><span class="small">How the model reads a standard Innovate UK pack</span></div>
+          <div class="mapping" id="evidenceMap"></div>
+          <div style="height: var(--space-5);"></div>
+          <h2 style="font-size: var(--text-base); margin-bottom: var(--space-3);">Interpretation notes</h2>
+          <ul class="note-list">
+            <li>Finance checks affordability, co-funding resilience, and burn-rate realism.</li>
+            <li>Innovation tests differentiation, protectability, and technical credibility.</li>
+            <li>Marketing scores evidence of demand, buyer logic, and adoption route.</li>
+            <li>Operations covers milestones, governance, supplier readiness, and delivery control.</li>
+            <li>RECoIL shows whether the team can absorb grant complexity without losing growth momentum.</li>
+          </ul>
+        </section>
+      </div>
+
+      <div class="layout">
+        <section class="panel">
+          <div class="section-title"><h2>Radar charts</h2><span class="small">PRIMO-F evidence vs RECoIL capability</span></div>
+          <div class="chart-wrap"><canvas id="primoChart"></canvas></div>
+          <div style="height: var(--space-5);"></div>
+          <div class="chart-wrap"><canvas id="recoilChart"></canvas></div>
+        </section>
+
+        <section class="panel">
+          <div class="section-title"><h2>Tailored recommendations</h2><span class="small">Dynamic actions for UK grant-funded projects</span></div>
+          <div class="recommendations" id="recommendations"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const defaultScores = {
+      finance: 7,
+      innovation: 8,
+      marketing: 6,
+      operations: 7,
+      resources: 7,
+      experience: 6,
+      controls: 7,
+      innovationDepth: 8,
+      leadership: 6
+    };
+
+    const categories = [
+      { key: 'finance', label: 'Finance', group: 'PRIMO-F', source: 'Budget sheets', description: 'Eligible cost build, cash contribution, claims profile, and financial headroom.' },
+      { key: 'innovation', label: 'Innovation', group: 'PRIMO-F', source: 'Project proposal', description: 'Novelty case, technical challenge, IP position, and measurable advance over current practice.' },
+      { key: 'marketing', label: 'Marketing', group: 'PRIMO-F', source: 'Market analysis', description: 'Customer urgency, addressable market evidence, route-to-market logic, and adoption assumptions.' },
+      { key: 'operations', label: 'Operations', group: 'PRIMO-F', source: 'Delivery plan', description: 'Milestones, dependency control, consortium interfaces, procurement readiness, and risk tracking.' },
+      { key: 'resources', label: 'Resources', group: 'RECoIL', source: 'Resource plan', description: 'People, facilities, subcontractor capacity, and budget alignment with work packages.' },
+      { key: 'experience', label: 'Experience', group: 'RECoIL', source: 'Team credentials', description: 'Relevant delivery history, regulatory familiarity, commercial track record, and partner credibility.' },
+      { key: 'controls', label: 'Controls', group: 'RECoIL', source: 'Governance and reporting', description: 'Financial control, change control, board oversight, benefits tracking, and compliance habits.' },
+      { key: 'innovationDepth', label: 'Innovation depth', group: 'RECoIL', source: 'Technical annex', description: 'Depth of know-how, defendability, validation plan, and ability to extend the innovation after the grant.' },
+      { key: 'leadership', label: 'Leadership', group: 'RECoIL', source: 'Leadership narrative', description: 'Decision velocity, alignment across partners, sponsor ownership, and escalation discipline.' }
+    ];
+
+    const scoreGrid = document.getElementById('scoreGrid');
+    const evidenceMap = document.getElementById('evidenceMap');
+    const recommendationsNode = document.getElementById('recommendations');
+
+    function buildUI() {
+      categories.forEach(cat => {
+        const block = document.createElement('div');
+        block.className = 'category-block';
+        block.innerHTML = `
+          <div class="category-head">
+            <div>
+              <h3>${cat.label}</h3>
+              <div class="small">${cat.group} · ${cat.source}</div>
+            </div>
+            <div class="score-output"><span id="${cat.key}Value">${defaultScores[cat.key]}</span>/10</div>
+          </div>
+          <p class="small" style="margin:0 0 var(--space-3);">${cat.description}</p>
+          <div class="score-row">
+            <input type="range" min="1" max="10" value="${defaultScores[cat.key]}" id="${cat.key}" />
+            <span class="pill">${cat.group}</span>
+          </div>
+        `;
+        scoreGrid.appendChild(block);
+
+        const map = document.createElement('div');
+        map.className = 'mapping-item';
+        map.innerHTML = `<strong>${cat.label}</strong><span class="small">Pulled primarily from ${cat.source.toLowerCase()}. ${cat.description}</span>`;
+        evidenceMap.appendChild(map);
+      });
+    }
+
+    buildUI();
+
+    const state = { ...defaultScores };
+
+    categories.forEach(cat => {
+      const input = document.getElementById(cat.key);
+      input.addEventListener('input', e => {
+        state[cat.key] = Number(e.target.value);
+        document.getElementById(cat.key + 'Value').textContent = e.target.value;
+        updateAll();
+      });
+    });
+
+    const commonRadarOptions = () => ({
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: getCSS('--color-text'), font: { family: 'Satoshi' } } },
+        tooltip: { backgroundColor: getCSS('--color-surface-2'), titleColor: getCSS('--color-text'), bodyColor: getCSS('--color-text'), borderColor: getCSS('--color-border'), borderWidth: 1 }
+      },
+      scales: {
+        r: {
+          min: 0,
+          max: 10,
+          ticks: { stepSize: 2, color: getCSS('--color-text-muted'), backdropColor: 'transparent' },
+          angleLines: { color: getCSS('--chart-grid') },
+          grid: { color: getCSS('--chart-grid') },
+          pointLabels: { color: getCSS('--color-text'), font: { size: 12, family: 'Satoshi' } }
+        }
+      }
+    });
+
+    const primoCtx = document.getElementById('primoChart');
+    const recoilCtx = document.getElementById('recoilChart');
+
+    let primoChart = new Chart(primoCtx, {
+      type: 'radar',
+      data: { labels: ['Finance', 'Innovation', 'Marketing', 'Operations'], datasets: [{ label: 'PRIMO-F', data: [], backgroundColor: 'rgba(1,105,111,.18)', borderColor: getCSS('--color-primary'), pointBackgroundColor: getCSS('--color-primary'), borderWidth: 2 }] },
+      options: commonRadarOptions()
+    });
+
+    let recoilChart = new Chart(recoilCtx, {
+      type: 'radar',
+      data: { labels: ['Resources', 'Experience', 'Controls', 'Innovation depth', 'Leadership'], datasets: [{ label: 'RECoIL', data: [], backgroundColor: 'rgba(122,57,187,.14)', borderColor: getCSS('--color-purple'), pointBackgroundColor: getCSS('--color-purple'), borderWidth: 2 }] },
+      options: commonRadarOptions()
+    });
+
+    function getCSS(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+    function average(values) { return values.reduce((a,b) => a+b, 0) / values.length; }
+
+    function growthBand(score) {
+      if (score >= 80) return 'High acceleration';
+      if (score >= 65) return 'Strong with gaps';
+      if (score >= 50) return 'Moderate risk';
+      return 'Intervention needed';
+    }
+
+    function buildRecommendations(primoAvg, recoilAvg, growth, weakest) {
+      const recommendations = [];
+      if (state.finance <= 6) recommendations.push(['Tighten the finance case', 'Rebuild the grant budget around eligible cost logic, evidence match funding availability, and show at least one downside cash-flow scenario before claims land.']);
+      if (state.marketing <= 6) recommendations.push(['Sharpen market proof', 'Translate the market analysis into buyer-specific demand signals, quantified adoption milestones, and a clear post-grant sales path with timing assumptions.']);
+      if (state.operations <= 6 || state.controls <= 6) recommendations.push(['Strengthen delivery controls', 'Add milestone tolerances, reporting cadence, named owners, and exception routes so the project can handle scope drift without breaching grant terms.']);
+      if (state.experience <= 6 || state.leadership <= 6) recommendations.push(['De-risk execution leadership', 'Close capability gaps with an experienced work-package lead, advisory support, or a stronger exploitation sponsor who owns cross-partner decisions.']);
+      if (state.innovation <= 7 || state.innovationDepth <= 7) recommendations.push(['Deepen technical credibility', 'Show clearer evidence of why the innovation is hard to replicate, what validation still matters, and how the project advances beyond a single funded demonstration.']);
+      if (recommendations.length < 3) recommendations.push(['Maintain momentum', 'Use the current evidence base to set quarterly commercial, technical, and governance checkpoints so the grant does not become a reporting exercise instead of a growth engine.']);
+      recommendations.push(['Overall reading', `Current growth effectiveness is ${growth.toFixed(0)}%, with ${growthBand(growth).toLowerCase()} driven by ${weakest.label.toLowerCase()} as the weakest category.`]);
+      return recommendations.slice(0, 5);
+    }
+
+    function updateAll() {
+      const primo = [state.finance, state.innovation, state.marketing, state.operations];
+      const recoil = [state.resources, state.experience, state.controls, state.innovationDepth, state.leadership];
+      const primoAvg = average(primo);
+      const recoilAvg = average(recoil);
+      const growth = ((primoAvg * 0.6) + (recoilAvg * 0.4)) * 10;
+      const delivery = average([state.operations, state.controls, state.resources, state.leadership]);
+      const commercial = average([state.marketing, state.innovation, state.innovationDepth, state.experience]);
+      const weakest = categories.slice().sort((a,b) => state[a.key] - state[b.key])[0];
+
+      document.getElementById('growthEffectiveness').textContent = `${growth.toFixed(0)}%`;
+      document.getElementById('deliveryConfidence').textContent = `${delivery.toFixed(1)}/10`;
+      document.getElementById('commercialStrength').textContent = `${commercial.toFixed(1)}/10`;
+      document.getElementById('priorityLevel').textContent = growthBand(growth);
+
+      primoChart.data.datasets[0].data = primo;
+      recoilChart.data.datasets[0].data = recoil;
+      primoChart.options = commonRadarOptions();
+      recoilChart.options = commonRadarOptions();
+      primoChart.data.datasets[0].borderColor = getCSS('--color-primary');
+      primoChart.data.datasets[0].pointBackgroundColor = getCSS('--color-primary');
+      recoilChart.data.datasets[0].borderColor = getCSS('--color-purple');
+      recoilChart.data.datasets[0].pointBackgroundColor = getCSS('--color-purple');
+      primoChart.update();
+      recoilChart.update();
+
+      const items = buildRecommendations(primoAvg, recoilAvg, growth, weakest);
+      recommendationsNode.innerHTML = items.map(([title, text]) => `<article class="recommendation"><h4>${title}</h4><p>${text}</p></article>`).join('');
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      Object.entries(defaultScores).forEach(([key, value]) => {
+        state[key] = value;
+        document.getElementById(key).value = value;
+        document.getElementById(key + 'Value').textContent = value;
+      });
+      updateAll();
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', async () => {
+      const payload = {
+        project: document.getElementById('projectName').value,
+        notes: document.getElementById('contextBox').value,
+        scores: state,
+        generatedAt: new Date().toISOString()
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'primo-f-assessment-snapshot.json';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    });
+
+    const toggle = document.querySelector('[data-theme-toggle]');
+    function syncThemeLabel() {
+      toggle.textContent = document.documentElement.getAttribute('data-theme') === 'dark' ? '☼' : '◐';
+    }
+    toggle.addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      document.documentElement.setAttribute('data-theme', current === 'dark' ? 'light' : 'dark');
+      syncThemeLabel();
+      updateAll();
+    });
+
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    syncThemeLabel();
+    updateAll();
+  </script>
+</body>
+</html>
